@@ -71,9 +71,11 @@ static void youtube_music_poll_task(void* pvParameters) {
                                     std::string audio_url = stream_url->valuestring;
                                     ESP_LOGI("YT_MUSIC", "Menerima Stream Audio: %s", audio_url.c_str());
 
-                                    // Panggil StartNotification bawaan XiaoZhi C3
-                                    std::vector<NotifySubtitle> empty_subtitles;
-                                    app->StartNotification(audio_url, empty_subtitles);
+                                    // PERBAIKAN: Dibungkus dengan app->Schedule agar aman diakses dari task luar
+                                    app->Schedule([app, audio_url]() {
+                                        std::vector<NotifySubtitle> empty_subtitles;
+                                        app->StartNotification(audio_url, empty_subtitles);
+                                    });
 
                                     // Kirim ACK konfirmasi ke server
                                     char ack_url[256];
