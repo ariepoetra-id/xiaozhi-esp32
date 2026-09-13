@@ -71,7 +71,7 @@ static void youtube_music_poll_task(void* pvParameters) {
                                     std::string audio_url = stream_url->valuestring;
                                     ESP_LOGI("YT_MUSIC", "Menerima Stream Audio: %s", audio_url.c_str());
 
-                                    // PERBAIKAN: Dibungkus dengan app->Schedule agar aman diakses dari task luar
+                                    // Dibungkus dengan app->Schedule agar aman diakses dari task luar
                                     app->Schedule([app, audio_url]() {
                                         std::vector<NotifySubtitle> empty_subtitles;
                                         app->StartNotification(audio_url, empty_subtitles);
@@ -107,7 +107,6 @@ static void youtube_music_poll_task(void* pvParameters) {
         esp_http_client_cleanup(client);
     }
 }
-
 // ============================================================================
 
 Application::Application() : notify_player_(audio_service_) {
@@ -151,13 +150,10 @@ void Application::Initialize() {
     auto& board = Board::GetInstance();
     SetDeviceState(kDeviceStateStarting);
 
-    // Setup the display
     auto display = board.GetDisplay();
     display->SetupUI();
-    // Print board name/version info
     display->SetChatMessage("system", SystemInfo::GetUserAgent().c_str());
 
-    // Setup the audio service
     auto codec = board.GetAudioCodec();
     audio_service_.Initialize(codec);
     audio_service_.Start();
@@ -182,20 +178,16 @@ void Application::Initialize() {
     };
     audio_service_.SetCallbacks(callbacks);
 
-    // Add state change listeners
     state_machine_.AddStateChangeListener([this](DeviceState old_state, DeviceState new_state) {
         xEventGroupSetBits(event_group_, MAIN_EVENT_STATE_CHANGED);
     });
 
-    // Start the clock timer to update the status bar
     esp_timer_start_periodic(clock_timer_handle_, 1000000);
 
-    // Add MCP common tools (only once during initialization)
     auto& mcp_server = McpServer::GetInstance();
     mcp_server.AddCommonTools();
     mcp_server.AddUserOnlyTools();
 
-    // Set network event callback for UI updates and network state handling
     board.SetNetworkEventCallback([this](NetworkEvent event, const std::string& data) {
         auto display = Board::GetInstance().GetDisplay();
 
@@ -381,7 +373,7 @@ void Application::HandleNetworkConnectedEvent() {
     auto display = Board::GetInstance().GetDisplay();
     display->UpdateStatusBar(true);
 
-    // AKTIFKAN TASK POLLING YOUTUBE MUSIC SAAT INTERNET TERHUBUNG
+    // Task Polling YouTube Music
     static bool yt_task_created = false;
     if (!yt_task_created) {
         yt_task_created = true;
