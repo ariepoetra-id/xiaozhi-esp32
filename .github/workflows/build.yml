@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   build:
-    name: Build ESP32-C3 SuperMini
+    name: Build ESP32-C3
     runs-on: ubuntu-latest
     container:
       image: espressif/idf:v6.1
@@ -17,18 +17,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build C3 SuperMini Variant
+      - name: Build C3 Variant
         shell: bash
         run: |
           source $IDF_PATH/export.sh
-          # Set target chip ke RISC-V ESP32-C3
-          idf.py set-target esp32c3
-          # Jalankan skrip build khusus board esp32-c3-supermini
-          python scripts/build.py esp32-c3-supermini
+          # Build menggunakan nama board C3 yang terdaftar resmi di repo
+          python scripts/build.py lichuang-c3-dev
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: xiaozhi_esp32c3_supermini_${{ github.sha }}
+          name: xiaozhi_esp32c3_${{ github.sha }}
           path: build/merged-binary.bin
           if-no-files-found: error
