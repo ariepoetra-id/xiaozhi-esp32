@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   build:
-    name: Build ESP32-C3
+    name: Build ESP32-C3 Direct IDF
     runs-on: ubuntu-latest
     container:
       image: espressif/idf:v6.1
@@ -17,16 +17,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build C3 Variant
+      - name: Build with ESP-IDF
         shell: bash
         run: |
           source $IDF_PATH/export.sh
-          # Build menggunakan nama board C3 yang terdaftar resmi di repo
-          python scripts/build.py lichuang-c3-dev
+          
+          # Atur target chip langsung ke esp32c3
+          idf.py set-target esp32c3
+          
+          # Kompilasi langsung proyek tanpa lewat script python
+          idf.py build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: xiaozhi_esp32c3_${{ github.sha }}
+          name: xiaozhi_esp32c3_direct_${{ github.sha }}
           path: build/merged-binary.bin
           if-no-files-found: error
