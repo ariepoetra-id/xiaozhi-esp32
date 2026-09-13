@@ -22,17 +22,22 @@
 #define TAG "Application"
 
 // ============================================================================
-// KONFIGURASI YOUTUBE MUSIC POLLING SERVER
+// KONFIGURASI YOUTUBE MUSIC POLLING SERVER (xiaozhiscig.biz.id)
 // ============================================================================
 #define YT_SERVER_URL "https://xiaozhiscig.biz.id"
-#define YT_DEVICE_ID  "esp32-living-room" // Sesuaikan dengan Device ID milikmu
+#define YT_DEVICE_ID  "esp32-living-room" // Sesuaikan ID perangkat kamu jika beda
 
 static void youtube_music_poll_task(void* pvParameters) {
     Application* app = static_cast<Application*>(pvParameters);
-    ESP_LOGI("YT_MUSIC", "Task Polling YouTube Music Berjalan...");
+    ESP_LOGI("YT_MUSIC", "Task Polling YouTube Music Dimulai...");
 
     while (true) {
-        vTaskDelay(pdMS_TO_TICKS(3000));
+        vTaskDelay(pdMS_TO_TICKS(3000)); // Polling setiap 3 detik
+
+        // Hanya jalankan polling jika perangkat sedang idle
+        if (app->GetDeviceState() != kDeviceStateIdle) {
+            continue;
+        }
 
         char url[256];
         snprintf(url, sizeof(url), "%s/api/audio/commands/%s", YT_SERVER_URL, YT_DEVICE_ID);
@@ -44,8 +49,7 @@ static void youtube_music_poll_task(void* pvParameters) {
         esp_http_client_handle_t client = esp_http_client_init(&config);
         if (client == NULL) continue;
 
-        esp_err_t err = esp_http_client_perform(client);
-        if (err == ESP_OK) {
+        if (esp_http_client_perform(client) == ESP_OK) {
             int status_code = esp_http_client_get_status_code(client);
             if (status_code == 200) {
                 int content_length = esp_http_client_get_content_length(client);
@@ -67,10 +71,11 @@ static void youtube_music_poll_task(void* pvParameters) {
                                     std::string audio_url = stream_url->valuestring;
                                     ESP_LOGI("YT_MUSIC", "Menerima Stream Audio: %s", audio_url.c_str());
 
-                                    // Panggil StartNotification bawaan XiaoZhi
-                                    app->StartNotification(audio_url, {});
+                                    // Panggil StartNotification bawaan XiaoZhi C3
+                                    std::vector<NotifySubtitle> empty_subtitles;
+                                    app->StartNotification(audio_url, empty_subtitles);
 
-                                    // Kirim ACK ke server
+                                    // Kirim ACK konfirmasi ke server
                                     char ack_url[256];
                                     snprintf(ack_url, sizeof(ack_url), "%s/api/audio/ack/%d", YT_SERVER_URL, command_id);
 
@@ -374,7 +379,7 @@ void Application::HandleNetworkConnectedEvent() {
     auto display = Board::GetInstance().GetDisplay();
     display->UpdateStatusBar(true);
 
-    // JALANKAN TASK POLLING YOUTUBE MUSIC
+    // AKTIFKAN TASK POLLING YOUTUBE MUSIC SAAT INTERNET TERHUBUNG
     static bool yt_task_created = false;
     if (!yt_task_created) {
         yt_task_created = true;
